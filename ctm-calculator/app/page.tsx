@@ -8,6 +8,9 @@ type ParseResult = {
   invalidTokens: string[];
 };
 
+type DecimalMode = "auto" | "dot" | "comma";
+type ResolvedDecimalMode = "dot" | "comma";
+
 type StatisticsResult = {
   mean: number;
   standardError: number | null;
@@ -182,104 +185,146 @@ function formatNumber(value: number | null): string {
 }
 
 export default function Home() {
-  const [input, setInput] = useState<string>(SAMPLE_DATA);
-  const [actionMessage, setActionMessage] = useState<string>("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const parsed = useMemo(() => parseValues(input), [input]);
-  const stats = useMemo(
-    () => (parsed.values.length > 0 ? calculateStatistics(parsed.values) : null),
-    [parsed.values],
-  );
-
-  useEffect(() => {
-    if (!actionMessage) {
-      return;
+  function resolveDecimalMode(input: string, mode: DecimalMode): ResolvedDecimalMode {
+    if (mode !== "auto") {
+      return mode;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setActionMessage("");
-    }, 1800);
+    const normalizedInput = input.replaceAll("\r", "");
+    const commaCount = (normalizedInput.match(/,/g) ?? []).length;
+    const decimalCommaMatches =
+      normalizedInput.match(/[-+]?\d+,\d+(?:e[-+]?\d+)?/gi) ?? [];
 
-    return () => window.clearTimeout(timeoutId);
-  }, [actionMessage]);
+    const hasRowSeparators = /[\n;\t]/.test(normalizedInput);
+    if (hasRowSeparators && decimalCommaMatches.length > 0) {
+      return "comma";
+    }
 
-  function handleLoadExample(): void {
-    setInput(SAMPLE_DATA);
-    setActionMessage("Ejemplo cargado correctamente.");
-    textareaRef.current?.focus();
+    if (commaCount > 0 && commaCount === decimalCommaMatches.length) {
+      return "comma";
+    }
+
+    return "dot";
   }
 
-  function handleClear(): void {
-    setInput("");
-    setActionMessage("Datos limpiados.");
-    textareaRef.current?.focus();
+  function tokenizeInput(input: string, resolvedMode: ResolvedDecimalMode): string[] {
+    const normalizedInput = input.replaceAll("\r", "");
+    const separatorPattern =
+      resolvedMode === "dot" ? /[,\n;\t\s]+/ : /[\n;\t\s]+/;
+
+    const baseTokens = normalizedInput
+      .split(separatorPattern)
+      .map((token) => token.trim())
+      .filter(Boolean);
+
+    if (resolvedMode !== "comma") {
+      return baseTokens;
+    }
+
+    const expandedTokens: string[] = [];
+    for (const token of baseTokens) {
+      const commaCount = (token.match(/,/g) ?? []).length;
+
+      // Fallback: si hay muchas comas en un mismo token, asumimos separador por comas.
+      if (commaCount > 1 && !token.includes(".")) {
+        expandedTokens.push(
+          ...token.split(",").map((value) => value.trim()).filter(Boolean),
+        );
+        continue;
+      }
+
+      expandedTokens.push(token);
+    }
+
+    return expandedTokens;
   }
 
-  function handleExportExcel(): void {
-    if (!stats) {
-      setActionMessage("No hay datos validos para exportar.");
+  function normalizeToken(
+    token: string,
+    resolvedMode: ResolvedDecimalMode,
+  ): string {
+    if (resolvedMode === "dot") {
+      return token;
+    }
+
+    if (token.includes(",") && token.includes(".")) {
+      // Soporta formato como 1.234,56
+      return token.replaceAll(".", "").replace(",", ".");
+    }
+
+    return token.replace(",", ".");
+  }
+
+  function parseValues(input: string, mode: DecimalMode): ParseResult {
+    const resolvedMode = resolveDecimalMode(input, mode);
       return;
     }
 
     const resultsSheetData: Array<[string, number | string]> = [
-      ["Indicador", "Valor"],
-      ["Media", stats.mean],
+    for (const rawToken of tokenizeInput(input, resolvedMode)) {
+      const token = normalizeToken(rawToken, resolvedMode);
+
+      if (!numericPattern.test(token)) {
+        invalidTokens.push(rawToken);
+        continue;
+      }
+
+      const value = Number(token);
+      if (Number.isFinite(value)) {
+        values.push(value);
+      } else {
+        invalidTokens.push(rawToken);
+      }
+    }
+
+    return { values, invalidTokens };
+  }
+
+  export default function Home() {
+    const [input, setInput] = useState<string>(SAMPLE_DATA);
+    const [decimalMode, setDecimalMode] = useState<DecimalMode>("auto");
+    const [actionMessage, setActionMessage] = useState<string>("");
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const parsed = useMemo(() => parseValues(input, decimalMode), [input, decimalMode]);
+    const stats = useMemo(
+      () => (parsed.values.length > 0 ? calculateStatistics(parsed.values) : null),
+      [parsed.values],
+    );
+
+    useEffect(() => {
+      if (!actionMessage) {
+        return;
+      }
+
+      const timeoutId = window.setTimeout(() => {
+        setActionMessage("");
+      }, 1800);
+
+      return () => window.clearTimeout(timeoutId);
+    }, [actionMessage]);
+
+    function handleLoadExample(): void {
+      setInput(SAMPLE_DATA);
+      setActionMessage("Ejemplo cargado correctamente.");
+      textareaRef.current?.focus();
+    }
+
+    function handleClear(): void {
+      setInput("");
+      setActionMessage("Datos limpiados.");
+      textareaRef.current?.focus();
+    }
+
+    function handleExportExcel(): void {
+      if (!stats) {
+        setActionMessage("No hay datos validos para exportar.");
       ["Error tipico", stats.standardError ?? "N/A"],
       ["Mediana", stats.median],
       ["Moda", stats.mode.length > 0 ? stats.mode.join(", ") : "Sin moda"],
-      ["Desviacion estandar (muestral)", stats.sampleStdDev ?? "N/A"],
-      ["Varianza de la muestra", stats.sampleVariance ?? "N/A"],
-      ["Curtosis (exceso)", stats.kurtosis ?? "N/A"],
-      ["Coeficiente de asimetria", stats.skewness ?? "N/A"],
-      ["Rango", stats.range],
-      ["Minimo", stats.min],
-      ["Maximo", stats.max],
-      ["Suma", stats.sum],
-      ["Cuenta", stats.count],
-    ];
 
-    const valuesSheetData: Array<[number, number]> = parsed.values.map((value, index) => [
-      index + 1,
-      value,
-    ]);
-
-    const workbook = XLSX.utils.book_new();
-    const resultsSheet = XLSX.utils.aoa_to_sheet(resultsSheetData);
-    const valuesSheet = XLSX.utils.aoa_to_sheet([
-      ["Indice", "Valor"],
-      ...valuesSheetData,
-    ]);
-
-    XLSX.utils.book_append_sheet(workbook, resultsSheet, "Resultados");
-    XLSX.utils.book_append_sheet(workbook, valuesSheet, "Datos");
-
-    if (parsed.invalidTokens.length > 0) {
-      const invalidSheet = XLSX.utils.aoa_to_sheet([
-        ["Valores ignorados"],
-        ...parsed.invalidTokens.map((token) => [token]),
-      ]);
-      XLSX.utils.book_append_sheet(workbook, invalidSheet, "Ignorados");
-    }
-
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-    XLSX.writeFile(workbook, `estadistica-descriptiva-${timestamp}.xlsx`);
-    setActionMessage("Archivo Excel exportado.");
-  }
-
-  const modeLabel =
-    stats?.mode.length === 0
-      ? "Sin moda"
-      : stats?.mode.map((value) => formatNumber(value)).join(", ");
-
-  const metricRows = stats
-    ? [
-        ["Media", formatNumber(stats.mean)],
-        ["Error tipico", formatNumber(stats.standardError)],
-        ["Mediana", formatNumber(stats.median)],
-        ["Moda", modeLabel],
-        ["Desviacion estandar (muestral)", formatNumber(stats.sampleStdDev)],
-        ["Varianza de la muestra", formatNumber(stats.sampleVariance)],
+        return;
+      }
         ["Curtosis (exceso)", formatNumber(stats.kurtosis)],
         ["Coeficiente de asimetria", formatNumber(stats.skewness)],
         ["Rango", formatNumber(stats.range)],

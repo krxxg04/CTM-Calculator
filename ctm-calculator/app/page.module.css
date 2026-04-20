@@ -26,13 +26,10 @@
   position: relative;
   width: 4.4rem;
   height: 4.4rem;
-  border: 1px solid #000000;
-  background: #000000;
 }
 
 .logo {
   object-fit: contain;
-  padding: 0.28rem;
 }
 
 .kicker {

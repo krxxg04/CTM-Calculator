@@ -439,7 +439,7 @@ export default function Home() {
         <header className={styles.hero}>
           <div className={styles.logoBox}>
             <Image
-              src="/Whiteosito.png"
+              src="/Blackosito.png"
               alt="Logo de Osito Calculator"
               fill
               className={styles.logo}

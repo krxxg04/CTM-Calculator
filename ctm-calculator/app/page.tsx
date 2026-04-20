@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type ParseResult = {
@@ -294,19 +295,34 @@ export default function Home() {
   return (
     <div className="relative flex min-h-screen items-center overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-20 -left-16 h-64 w-64 rounded-full bg-[#f59e0b]/20 blur-3xl" />
-        <div className="absolute right-0 bottom-0 h-80 w-80 rounded-full bg-[#0ea5e9]/20 blur-3xl" />
+        <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-zinc-900/10 blur-3xl" />
+        <div className="absolute right-0 bottom-0 h-80 w-80 rounded-full bg-zinc-200/80 blur-3xl" />
       </div>
 
-      <main className="relative mx-auto w-full max-w-6xl rounded-3xl border border-slate-900/10 bg-white/85 p-4 shadow-2xl backdrop-blur-md sm:p-6 lg:p-8">
-        <header className="mb-6 space-y-2">
-          <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
-            Estadistica Descriptiva
-          </p>
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl lg:text-4xl">
-            Calculadora Estadistica
-          </h1>
-          <p className="max-w-3xl text-sm text-slate-600 sm:text-base">
+      <main className="relative mx-auto w-full max-w-6xl rounded-3xl border border-zinc-900/20 bg-white/95 p-4 shadow-[0_25px_70px_rgba(0,0,0,0.2)] backdrop-blur-md sm:p-6 lg:p-8">
+        <header className="mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-zinc-900 bg-black shadow-sm">
+              <Image
+                src="/image.png"
+                alt="Logo de Osito Calculator"
+                fill
+                className="object-contain p-1"
+                priority
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500 uppercase">
+                OSITO CALCULATOR
+              </p>
+              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl lg:text-4xl">
+                Osito Calculator
+              </h1>
+            </div>
+          </div>
+
+          <p className="mt-3 max-w-3xl text-sm text-zinc-600 sm:text-base">
             Pega tus numeros separados por comas, saltos de linea, tabulaciones
             o punto y coma. Usa punto para decimales (ej. 12.5). El calculo se
             actualiza automaticamente.
@@ -314,22 +330,22 @@ export default function Home() {
         </header>
 
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+          <article className="rounded-2xl border border-zinc-300 bg-zinc-50 p-4 sm:p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-900">Entrada de datos</h2>
+              <h2 className="text-lg font-semibold text-zinc-900">Entrada de datos</h2>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleLoadExample}
-                  className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                  className="rounded-full border border-zinc-400 px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-600 hover:bg-zinc-200"
                 >
                   Cargar ejemplo
                 </button>
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
+                  className="rounded-full border border-zinc-400 px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-600 hover:bg-zinc-200"
                 >
                   Limpiar
                 </button>
@@ -337,7 +353,7 @@ export default function Home() {
                   type="button"
                   onClick={handleExportExcel}
                   disabled={!stats}
-                  className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-400 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="rounded-full border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:border-zinc-400 disabled:bg-zinc-300 disabled:text-zinc-500"
                 >
                   Exportar Excel
                 </button>
@@ -349,11 +365,11 @@ export default function Home() {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               spellCheck={false}
-              className="h-72 w-full resize-y rounded-xl border border-slate-300 bg-white p-3 font-mono text-sm text-slate-800 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+              className="h-72 w-full resize-y rounded-xl border border-zinc-400 bg-white p-3 font-mono text-sm text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-400/40"
               placeholder="Ejemplo: 10, 12, 15\n20\n25"
             />
 
-            <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+            <div className="mt-3 grid gap-2 text-sm text-zinc-700 sm:grid-cols-2">
               <p>
                 Valores validos: <strong>{parsed.values.length}</strong>
               </p>
@@ -362,18 +378,18 @@ export default function Home() {
               </p>
             </div>
 
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-zinc-600">
               Regla: coma para separar numeros y punto para decimales.
             </p>
 
             {actionMessage && (
-              <p className="mt-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              <p className="mt-2 rounded-xl border border-zinc-400 bg-zinc-100 px-3 py-2 text-sm text-zinc-800">
                 {actionMessage}
               </p>
             )}
 
             {parsed.invalidTokens.length > 0 && (
-              <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <p className="mt-2 rounded-xl border border-zinc-400 bg-zinc-100 px-3 py-2 text-sm text-zinc-800">
                 Se ignoraron estos valores por no ser numericos: {" "}
                 {parsed.invalidTokens.slice(0, 12).join(", ")}
                 {parsed.invalidTokens.length > 12 ? "..." : ""}
@@ -381,8 +397,8 @@ export default function Home() {
             )}
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">Resultados</h2>
+          <article className="rounded-2xl border border-zinc-300 bg-white p-4 sm:p-5">
+            <h2 className="mb-3 text-lg font-semibold text-zinc-900">Resultados</h2>
 
             {stats ? (
               <>
@@ -390,26 +406,20 @@ export default function Home() {
                   {metricRows.map(([label, value]) => (
                     <div
                       key={label}
-                      className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2"
+                      className="rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2"
                     >
-                      <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                      <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
                         {label}
                       </dt>
-                      <dd className="mt-1 break-words text-base font-semibold text-slate-900">
+                      <dd className="mt-1 break-words text-base font-semibold text-zinc-900">
                         {value}
                       </dd>
                     </div>
                   ))}
                 </dl>
-
-                <p className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-900">
-                  Error tipico = s / sqrt(n), donde s es la desviacion estandar
-                  muestral. La asimetria y la curtosis usan estimadores
-                  muestrales corregidos (Fisher-Pearson / exceso de curtosis).
-                </p>
               </>
             ) : (
-              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+              <p className="rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-3 text-sm text-zinc-700">
                 Ingresa al menos un numero valido para ver los resultados.
               </p>
             )}

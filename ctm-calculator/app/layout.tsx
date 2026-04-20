@@ -13,8 +13,8 @@ const firaCode = Fira_Code({
 });
 
 export const metadata: Metadata = {
-  title: "Calculadora Estadistica",
-  description: "Calculadora de estadistica descriptiva para conjuntos de datos numericos",
+  title: "Osito Calculator",
+  description: "Calculadora estadistica para analizar datos numericos",
 };
 
 export default function RootLayout({

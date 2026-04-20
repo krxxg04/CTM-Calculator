@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Manrope, Playfair_Display } from "next/font/google";
+import { Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${manrope.variable} ${playfairDisplay.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfairDisplay.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

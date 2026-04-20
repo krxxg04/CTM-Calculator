@@ -23,6 +23,11 @@ type StatisticsResult = {
   max: number;
   sum: number;
   count: number;
+  q1: number;
+  q2: number;
+  q3: number;
+  deciles: number[];
+  sortedValues: number[];
 };
 
 const SAMPLE_DATA = `12, 18, 21, 21, 25
@@ -33,6 +38,8 @@ const SAMPLE_DATA = `12, 18, 21, 21, 25
 40`;
 
 const STORAGE_INPUT_KEY = "ctm-calculator.input";
+const STORAGE_DECILE_KEY = "ctm-calculator.decile";
+const STORAGE_PERCENTILE_KEY = "ctm-calculator.percentile";
 
 const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 6,
@@ -66,6 +73,44 @@ function parseValues(input: string): ParseResult {
   }
 
   return { values, invalidTokens };
+}
+
+function percentileFromSorted(sortedValues: number[], percentile: number): number | null {
+  if (sortedValues.length === 0) {
+    return null;
+  }
+
+  if (percentile <= 0) {
+    return sortedValues[0];
+  }
+
+  if (percentile >= 100) {
+    return sortedValues[sortedValues.length - 1];
+  }
+
+  const rank = (percentile / 100) * (sortedValues.length - 1);
+  const lower = Math.floor(rank);
+  const upper = Math.ceil(rank);
+  const weight = rank - lower;
+
+  if (lower === upper) {
+    return sortedValues[lower];
+  }
+
+  return sortedValues[lower] + (sortedValues[upper] - sortedValues[lower]) * weight;
+}
+
+function parsePercentileInput(value: string): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const numeric = Number(value);
+  if (!Number.isInteger(numeric) || numeric < 1 || numeric > 99) {
+    return null;
+  }
+
+  return numeric;
 }
 
 function calculateStatistics(values: number[]): StatisticsResult {
@@ -127,6 +172,15 @@ function calculateStatistics(values: number[]): StatisticsResult {
         (3 * Math.pow(count - 1, 2)) / ((count - 2) * (count - 3))
       : null;
 
+  const q1 = percentileFromSorted(sorted, 25) ?? sorted[0];
+  const q2 = percentileFromSorted(sorted, 50) ?? sorted[0];
+  const q3 = percentileFromSorted(sorted, 75) ?? sorted[sorted.length - 1];
+
+  const deciles = Array.from({ length: 9 }, (_, index) => {
+    const value = percentileFromSorted(sorted, (index + 1) * 10);
+    return value ?? sorted[0];
+  });
+
   return {
     mean,
     standardError,
@@ -141,6 +195,11 @@ function calculateStatistics(values: number[]): StatisticsResult {
     max,
     sum,
     count,
+    q1,
+    q2,
+    q3,
+    deciles,
+    sortedValues: sorted,
   };
 }
 
@@ -160,6 +219,8 @@ function formatNumber(value: number | null): string {
 export default function Home() {
   const [input, setInput] = useState<string>("");
   const [submittedInput, setSubmittedInput] = useState<string>("");
+  const [selectedDecile, setSelectedDecile] = useState<number>(5);
+  const [percentileInput, setPercentileInput] = useState<string>("90");
   const [actionMessage, setActionMessage] = useState<string>("");
   const [isStateRestored, setIsStateRestored] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -170,6 +231,27 @@ export default function Home() {
     () => (parsed.values.length > 0 ? calculateStatistics(parsed.values) : null),
     [parsed.values],
   );
+
+  const percentileNumber = useMemo(
+    () => parsePercentileInput(percentileInput),
+    [percentileInput],
+  );
+
+  const selectedDecileValue = useMemo(() => {
+    if (!stats) {
+      return null;
+    }
+
+    return stats.deciles[selectedDecile - 1] ?? null;
+  }, [stats, selectedDecile]);
+
+  const specificPercentileValue = useMemo(() => {
+    if (!stats || percentileNumber === null) {
+      return null;
+    }
+
+    return percentileFromSorted(stats.sortedValues, percentileNumber);
+  }, [stats, percentileNumber]);
 
   useEffect(() => {
     if (!actionMessage) {
@@ -186,10 +268,23 @@ export default function Home() {
   useEffect(() => {
     try {
       const savedInput = window.localStorage.getItem(STORAGE_INPUT_KEY);
+      const savedDecile = window.localStorage.getItem(STORAGE_DECILE_KEY);
+      const savedPercentile = window.localStorage.getItem(STORAGE_PERCENTILE_KEY);
 
       if (savedInput !== null) {
         setInput(savedInput);
         setSubmittedInput(savedInput);
+      }
+
+      if (savedDecile !== null) {
+        const decileValue = Number(savedDecile);
+        if (Number.isInteger(decileValue) && decileValue >= 1 && decileValue <= 9) {
+          setSelectedDecile(decileValue);
+        }
+      }
+
+      if (savedPercentile !== null) {
+        setPercentileInput(savedPercentile);
       }
     } finally {
       setIsStateRestored(true);
@@ -202,7 +297,9 @@ export default function Home() {
     }
 
     window.localStorage.setItem(STORAGE_INPUT_KEY, input);
-  }, [input, isStateRestored]);
+    window.localStorage.setItem(STORAGE_DECILE_KEY, String(selectedDecile));
+    window.localStorage.setItem(STORAGE_PERCENTILE_KEY, percentileInput);
+  }, [input, isStateRestored, selectedDecile, percentileInput]);
 
   function handleLoadExample(): void {
     setInput(SAMPLE_DATA);
@@ -220,6 +317,11 @@ export default function Home() {
 
   function handleCalculate(): void {
     setSubmittedInput(input);
+    if (percentileNumber === null) {
+      setActionMessage("Resultados actualizados. El percentil debe ser entero entre 1 y 99.");
+      return;
+    }
+
     setActionMessage("Resultados actualizados.");
   }
 
@@ -247,7 +349,26 @@ export default function Home() {
         ["Maximo", stats.max],
         ["Suma", stats.sum],
         ["Cuenta", stats.count],
+        ["Q1 (P25)", stats.q1],
+        ["Q2 (P50)", stats.q2],
+        ["Q3 (P75)", stats.q3],
       ];
+
+      stats.deciles.forEach((value, index) => {
+        resultsSheetData.push([`Decil D${index + 1}`, value]);
+      });
+
+      resultsSheetData.push([
+        `Decil seleccionado D${selectedDecile}`,
+        selectedDecileValue ?? "N/A",
+      ]);
+
+      resultsSheetData.push([
+        percentileNumber === null
+          ? "Percentil especifico (1-99)"
+          : `Percentil P${percentileNumber}`,
+        specificPercentileValue ?? "N/A",
+      ]);
 
       const valuesSheetData: Array<[number, number]> = parsed.values.map(
         (value, index) => [index + 1, value],
@@ -301,6 +422,14 @@ export default function Home() {
         ["Maximo", formatNumber(stats.max)],
         ["Suma", formatNumber(stats.sum)],
         ["Cuenta", String(stats.count)],
+        ["Q1 (P25)", formatNumber(stats.q1)],
+        ["Q2 (P50)", formatNumber(stats.q2)],
+        ["Q3 (P75)", formatNumber(stats.q3)],
+        [`Decil D${selectedDecile}`, formatNumber(selectedDecileValue)],
+        [
+          percentileNumber === null ? "Percentil (1-99)" : `Percentil P${percentileNumber}`,
+          formatNumber(specificPercentileValue),
+        ],
       ]
     : [];
 
@@ -322,8 +451,8 @@ export default function Home() {
             <p className={styles.kicker}>OSITO CALCULATOR</p>
             <h1 className={styles.title}>Osito Calculator</h1>
             <p className={styles.subtitle}>
-              Pega tus numeros y presiona Calcular. Regla: coma para separar
-              numeros y punto para decimales.
+              Pega tus numeros y presiona Calcular. Incluye estadistica
+              descriptiva, cuartiles, deciles y percentiles.
             </p>
           </div>
         </header>
@@ -364,6 +493,36 @@ export default function Home() {
                   Exportar Excel
                 </button>
               </div>
+
+              <div className={styles.positionControls}>
+                <label className={styles.inlineField}>
+                  <span>Decil (selector)</span>
+                  <select
+                    value={selectedDecile}
+                    onChange={(event) => setSelectedDecile(Number(event.target.value))}
+                    className={styles.select}
+                  >
+                    {Array.from({ length: 9 }, (_, index) => (
+                      <option key={index + 1} value={index + 1}>
+                        D{index + 1}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className={styles.inlineField}>
+                  <span>Percentil especifico (1-99)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    value={percentileInput}
+                    onChange={(event) => setPercentileInput(event.target.value)}
+                    className={styles.input}
+                  />
+                </label>
+              </div>
             </div>
 
             <textarea
@@ -399,14 +558,28 @@ export default function Home() {
             <h2 className={styles.panelTitle}>Resultados</h2>
 
             {stats ? (
-              <dl className={styles.resultsGrid}>
-                {metricRows.map(([label, value]) => (
-                  <div key={label} className={styles.resultTile}>
-                    <dt className={styles.resultLabel}>{label}</dt>
-                    <dd className={styles.resultValue}>{value}</dd>
+              <>
+                <dl className={styles.resultsGrid}>
+                  {metricRows.map(([label, value]) => (
+                    <div key={label} className={styles.resultTile}>
+                      <dt className={styles.resultLabel}>{label}</dt>
+                      <dd className={styles.resultValue}>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <div className={styles.decilesBlock}>
+                  <h3 className={styles.subsectionTitle}>Resumen Deciles (D1-D9)</h3>
+                  <div className={styles.decilesGrid}>
+                    {stats.deciles.map((value, index) => (
+                      <div key={`decil-${index + 1}`} className={styles.decileItem}>
+                        <span className={styles.decileKey}>D{index + 1}</span>
+                        <span className={styles.decileValue}>{formatNumber(value)}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </dl>
+                </div>
+              </>
             ) : (
               <p className={styles.emptyState}>
                 Ingresa al menos un numero valido y presiona Calcular.

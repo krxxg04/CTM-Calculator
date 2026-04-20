@@ -33,7 +33,6 @@
 .logo {
   object-fit: contain;
   padding: 0.28rem;
-  filter: invert(1);
 }
 
 .kicker {

@@ -439,7 +439,7 @@ export default function Home() {
         <header className={styles.hero}>
           <div className={styles.logoBox}>
             <Image
-              src="/image.png"
+              src="/Whiteosito.png"
               alt="Logo de Osito Calculator"
               fill
               className={styles.logo}
@@ -448,7 +448,7 @@ export default function Home() {
           </div>
 
           <div>
-            <p className={styles.kicker}>OSITO CALCULATOR</p>
+            <p className={styles.kicker}>OSITO UPC</p>
             <h1 className={styles.title}>Osito Calculator</h1>
             <p className={styles.subtitle}>
               Pega tus numeros y presiona Calcular. Incluye estadistica

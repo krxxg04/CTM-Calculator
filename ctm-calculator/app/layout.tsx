@@ -21,9 +21,12 @@ export const metadata: Metadata = {
   title: "Osito Calculator",
   description: "Calculadora estadistica para analizar datos numericos",
   icons: {
-    icon: [{ url: "/image.png", type: "image/png" }],
-    shortcut: [{ url: "/image.png", type: "image/png" }],
-    apple: [{ url: "/image.png", type: "image/png" }],
+    icon: [
+      { url: "/Whiteosito.png", type: "image/png" },
+      { url: "/Blackosito.png", type: "image/png" },
+    ],
+    shortcut: [{ url: "/Whiteosito.png", type: "image/png" }],
+    apple: [{ url: "/Whiteosito.png", type: "image/png" }],
   },
 };
 

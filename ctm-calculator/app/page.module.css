@@ -1,12 +1,15 @@
 .page {
   min-height: 100vh;
-  background: #ffffff;
-  color: #000000;
-  padding: 2rem 1rem 3rem;
+  background:
+    radial-gradient(1200px 540px at -10% -20%, #eff3ff 0%, transparent 60%),
+    radial-gradient(1000px 620px at 100% 120%, #e6edf7 0%, transparent 65%),
+    #f7f9fc;
+  color: #0f172a;
+  padding: clamp(1rem, 2.4vw, 2.4rem) clamp(0.8rem, 2.2vw, 1.8rem) 2.6rem;
 }
 
 .shell {
-  width: min(1120px, 100%);
+  width: min(1140px, 100%);
   margin: 0 auto;
   display: grid;
   gap: 1rem;
@@ -14,154 +17,192 @@
 
 .hero {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: 4.9rem minmax(0, 1fr);
+  align-items: center;
   gap: 1rem;
-  border: 1px solid #000000;
-  background: #efefef;
-  padding: 1rem;
+  border: 1px solid #d6deea;
+  border-radius: 26px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f4f9 100%);
+  box-shadow:
+    0 20px 45px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  padding: 1rem 1.1rem;
+  animation: rise 0.45s ease;
 }
 
 .logoBox {
   position: relative;
-  width: 4.5rem;
-  height: 4.5rem;
-  border: 1px solid #000000;
-  background: #ffffff;
+  width: 4.9rem;
+  height: 4.9rem;
+  border-radius: 18px;
+  border: 1px solid #111827;
+  background: linear-gradient(160deg, #0f172a 0%, #1f2937 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .logo {
   object-fit: contain;
-  padding: 0.2rem;
+  padding: 0.28rem;
+  filter: invert(1) contrast(1.2);
 }
 
 .kicker {
   margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
   font-weight: 800;
+  color: #334155;
 }
 
 .title {
-  margin: 0.2rem 0 0;
-  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0.18rem 0 0;
+  font-size: clamp(2.05rem, 4vw, 3.15rem);
   line-height: 1;
   font-weight: 900;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
+  color: #020617;
 }
 
 .subtitle {
-  margin: 0.6rem 0 0;
-  max-width: 46rem;
+  margin: 0.55rem 0 0;
+  max-width: 47rem;
   font-family: var(--font-serif), "Times New Roman", serif;
   font-style: italic;
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: clamp(0.98rem, 1.5vw, 1.06rem);
+  line-height: 1.52;
+  color: #334155;
 }
 
 .layoutGrid {
   display: grid;
-  grid-template-columns: minmax(320px, 1.1fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(320px, 1.06fr) minmax(320px, 0.94fr);
   gap: 1rem;
 }
 
 .panel {
-  border: 1px solid #000000;
-  background: #f3f3f3;
+  border: 1px solid #d7deeb;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(2px);
   padding: 1rem;
   display: grid;
   align-content: start;
-  gap: 0.9rem;
+  gap: 0.85rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  animation: rise 0.45s ease;
 }
 
 .panelHeader {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.72rem;
 }
 
 .panelTitle {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.45rem;
+  line-height: 1;
   font-weight: 900;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
 
 .panelTitle::before {
   content: "";
   display: block;
-  height: 1px;
-  width: 100%;
-  margin-bottom: 0.6rem;
-  background: #000000;
+  height: 2px;
+  width: 3.2rem;
+  margin-bottom: 0.68rem;
+  background: #111827;
+  border-radius: 999px;
 }
 
 .actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.52rem;
 }
 
 .button {
-  border: 1px solid #000000;
-  border-radius: 0;
-  padding: 0.65rem 0.6rem;
-  font-size: 0.82rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0.68rem 0.62rem;
+  font-size: 0.79rem;
   font-weight: 800;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: none;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
 }
 
 .buttonGhost {
-  background: #ffffff;
-  color: #000000;
+  background: #f8fafc;
+  border-color: #cfd8e6;
+  color: #1e293b;
 }
 
 .buttonGhost:hover {
-  background: #dfdfdf;
+  background: #edf2fa;
+  border-color: #bbc7db;
 }
 
 .buttonPrimary {
-  background: #000000;
-  color: #ffffff;
+  background: linear-gradient(145deg, #0f172a 0%, #1f2937 100%);
+  border-color: #111827;
+  color: #f8fafc;
 }
 
 .buttonPrimary:hover {
-  background: #232323;
+  background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
 }
 
 .buttonDark {
-  background: #dcdcdc;
-  color: #000000;
+  background: #e2e8f0;
+  border-color: #c2cedf;
+  color: #0f172a;
 }
 
 .buttonDark:hover {
-  background: #c6c6c6;
+  background: #d4deec;
 }
 
 .buttonDark:disabled {
   cursor: not-allowed;
-  background: #efefef;
-  color: #7f7f7f;
+  transform: none;
+  background: #edf2f7;
+  border-color: #d2dae6;
+  color: #8a96aa;
 }
 
 .textarea {
   width: 100%;
-  min-height: 19rem;
+  min-height: 18.5rem;
   resize: vertical;
-  border: 1px solid #000000;
-  border-radius: 0;
-  background: #ffffff;
-  color: #000000;
+  border: 1px solid #cfd8e6;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #0f172a;
   font-family: var(--font-mono), "Courier New", monospace;
-  font-size: 0.95rem;
-  line-height: 1.45;
-  padding: 0.75rem;
+  font-size: 0.93rem;
+  line-height: 1.48;
+  padding: 0.82rem;
   outline: none;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .textarea:focus {
-  background: #f4f4f4;
+  border-color: #64748b;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.14);
 }
 
 .metaGrid {
@@ -169,50 +210,59 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   font-size: 0.92rem;
+  color: #334155;
 }
 
 .message,
 .invalid,
 .emptyState {
-  border: 1px solid #000000;
-  border-radius: 0;
+  border: 1px solid #cfdae8;
+  border-radius: 12px;
   margin: 0;
-  padding: 0.6rem;
+  padding: 0.6rem 0.7rem;
   font-size: 0.88rem;
   line-height: 1.45;
 }
 
 .message {
-  background: #e4e4e4;
+  background: #eef4ff;
+  color: #1e3a8a;
 }
 
 .invalid {
-  background: #d8d8d8;
+  background: #fff5f5;
+  color: #991b1b;
 }
 
 .emptyState {
-  background: #ffffff;
+  background: #f8fafc;
+  color: #475569;
 }
 
 .resultsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.56rem;
   margin: 0;
 }
 
 .resultTile {
-  border: 1px solid #000000;
-  padding: 0.55rem;
-  background: #ffffff;
-  min-height: 5rem;
+  border: 1px solid #d0d9e8;
+  border-radius: 14px;
+  padding: 0.62rem;
+  background: linear-gradient(160deg, #ffffff 0%, #f1f5fb 100%);
+  min-height: 5.2rem;
   display: grid;
   align-content: space-between;
-  gap: 0.35rem;
+  gap: 0.36rem;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
 }
 
-.resultTile:nth-child(odd) {
-  background: #ececec;
+.resultTile:hover {
+  transform: translateY(-2px);
+  border-color: #aab7cc;
 }
 
 .resultLabel {
@@ -220,14 +270,29 @@
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
-  line-height: 1.3;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: #475569;
 }
 
 .resultValue {
   margin: 0;
-  font-size: clamp(1.2rem, 2.3vw, 1.7rem);
+  font-size: clamp(1.22rem, 2.2vw, 1.68rem);
   font-weight: 900;
+  letter-spacing: -0.02em;
   line-height: 1;
+  color: #020617;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1024px) {
@@ -236,19 +301,21 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .page {
-    padding: 1rem 0.7rem 1.5rem;
+    padding: 1rem 0.72rem 1.5rem;
   }
 
   .hero {
     grid-template-columns: 1fr;
-    gap: 0.7rem;
+    gap: 0.75rem;
+    border-radius: 18px;
   }
 
   .logoBox {
-    width: 3.8rem;
-    height: 3.8rem;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 14px;
   }
 
   .actions {
@@ -257,5 +324,9 @@
 
   .resultsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .panel {
+    border-radius: 18px;
   }
 }

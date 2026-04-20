@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Nunito } from "next/font/google";
+import { JetBrains_Mono, Playfair_Display, Sora } from "next/font/google";
 import "./globals.css";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const sora = Sora({
+  variable: "--font-sora",
+  subsets: ["latin"],
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair-display",
   subsets: ["latin"],
 });
 
@@ -25,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${nunito.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${sora.variable} ${playfairDisplay.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

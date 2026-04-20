@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import styles from "./page.module.css";
 
 type ParseResult = {
   values: number[];
@@ -33,7 +34,7 @@ const SAMPLE_DATA = `12, 18, 21, 21, 25
 
 const STORAGE_INPUT_KEY = "ctm-calculator.input";
 
-const numberFormatter = new Intl.NumberFormat("es-ES", {
+const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 6,
 });
 
@@ -158,11 +159,12 @@ function formatNumber(value: number | null): string {
 
 export default function Home() {
   const [input, setInput] = useState<string>("");
+  const [submittedInput, setSubmittedInput] = useState<string>("");
   const [actionMessage, setActionMessage] = useState<string>("");
   const [isStateRestored, setIsStateRestored] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const parsed = useMemo(() => parseValues(input), [input]);
+  const parsed = useMemo(() => parseValues(submittedInput), [submittedInput]);
 
   const stats = useMemo(
     () => (parsed.values.length > 0 ? calculateStatistics(parsed.values) : null),
@@ -187,6 +189,7 @@ export default function Home() {
 
       if (savedInput !== null) {
         setInput(savedInput);
+        setSubmittedInput(savedInput);
       }
     } finally {
       setIsStateRestored(true);
@@ -203,14 +206,21 @@ export default function Home() {
 
   function handleLoadExample(): void {
     setInput(SAMPLE_DATA);
+    setSubmittedInput(SAMPLE_DATA);
     setActionMessage("Ejemplo cargado correctamente.");
     textareaRef.current?.focus();
   }
 
   function handleClear(): void {
     setInput("");
+    setSubmittedInput("");
     setActionMessage("Datos limpiados.");
     textareaRef.current?.focus();
+  }
+
+  function handleCalculate(): void {
+    setSubmittedInput(input);
+    setActionMessage("Resultados actualizados.");
   }
 
   async function handleExportExcel(): Promise<void> {
@@ -270,11 +280,13 @@ export default function Home() {
   }
 
   const modeLabel =
-    stats?.mode.length === 0
-      ? "Sin moda"
-      : stats?.mode.map((value) => formatNumber(value)).join(", ");
+    stats === null
+      ? "N/A"
+      : stats.mode.length === 0
+        ? "Sin moda"
+        : stats.mode.map((value) => formatNumber(value)).join(", ");
 
-  const metricRows = stats
+  const metricRows: Array<[string, string]> = stats
     ? [
         ["Media", formatNumber(stats.mean)],
         ["Error tipico", formatNumber(stats.standardError)],
@@ -293,67 +305,61 @@ export default function Home() {
     : [];
 
   return (
-    <div className="relative flex min-h-screen items-center overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-zinc-900/10 blur-3xl" />
-        <div className="absolute right-0 bottom-0 h-80 w-80 rounded-full bg-zinc-200/80 blur-3xl" />
-      </div>
-
-      <main className="relative mx-auto w-full max-w-6xl rounded-3xl border border-zinc-900/20 bg-white/95 p-4 shadow-[0_25px_70px_rgba(0,0,0,0.2)] backdrop-blur-md sm:p-6 lg:p-8">
-        <header className="mb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-zinc-400 bg-white shadow-sm">
-              <Image
-                src="/image.png"
-                alt="Logo de Osito Calculator"
-                fill
-                className="object-contain p-1 invert contrast-125"
-                priority
-              />
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500 uppercase">
-                OSITO CALCULATOR
-              </p>
-              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl lg:text-4xl">
-                Osito Calculator
-              </h1>
-            </div>
+    <div className={styles.page}>
+      <main className={styles.shell}>
+        <header className={styles.hero}>
+          <div className={styles.logoBox}>
+            <Image
+              src="/image.png"
+              alt="Logo de Osito Calculator"
+              fill
+              className={styles.logo}
+              priority
+            />
           </div>
 
-          <p className="mt-3 max-w-3xl text-sm text-zinc-600 sm:text-base">
-            Pega tus numeros separados por comas, saltos de linea, tabulaciones
-            o punto y coma. Usa punto para decimales (ej. 12.5). El calculo se
-            actualiza automaticamente.
-          </p>
+          <div>
+            <p className={styles.kicker}>OSITO CALCULATOR</p>
+            <h1 className={styles.title}>Osito Calculator</h1>
+            <p className={styles.subtitle}>
+              Pega tus numeros y presiona Calcular. Regla: coma para separar
+              numeros y punto para decimales.
+            </p>
+          </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-2xl border border-zinc-300 bg-zinc-50 p-4 sm:p-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-zinc-900">Entrada de datos</h2>
+        <section className={styles.layoutGrid}>
+          <article className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2 className={styles.panelTitle}>Entrada de datos</h2>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className={styles.actions}>
                 <button
                   type="button"
                   onClick={handleLoadExample}
-                  className="rounded-full border border-zinc-400 px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-600 hover:bg-zinc-200"
+                  className={`${styles.button} ${styles.buttonGhost}`}
                 >
                   Cargar ejemplo
                 </button>
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="rounded-full border border-zinc-400 px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:border-zinc-600 hover:bg-zinc-200"
+                  className={`${styles.button} ${styles.buttonGhost}`}
                 >
                   Limpiar
                 </button>
                 <button
                   type="button"
+                  onClick={handleCalculate}
+                  className={`${styles.button} ${styles.buttonPrimary}`}
+                >
+                  Calcular
+                </button>
+                <button
+                  type="button"
                   onClick={handleExportExcel}
                   disabled={!stats}
-                  className="rounded-full border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:border-zinc-400 disabled:bg-zinc-300 disabled:text-zinc-500"
+                  className={`${styles.button} ${styles.buttonDark}`}
                 >
                   Exportar Excel
                 </button>
@@ -365,11 +371,11 @@ export default function Home() {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               spellCheck={false}
-              className="h-72 w-full resize-y rounded-xl border border-zinc-400 bg-white p-3 font-mono text-sm text-zinc-900 outline-none transition focus:border-zinc-900 focus:ring-2 focus:ring-zinc-400/40"
+              className={styles.textarea}
               placeholder="Ejemplo: 10, 12, 15\n20\n25"
             />
 
-            <div className="mt-3 grid gap-2 text-sm text-zinc-700 sm:grid-cols-2">
+            <div className={styles.metaGrid}>
               <p>
                 Valores validos: <strong>{parsed.values.length}</strong>
               </p>
@@ -378,18 +384,10 @@ export default function Home() {
               </p>
             </div>
 
-            <p className="mt-2 text-xs text-zinc-600">
-              Regla: coma para separar numeros y punto para decimales.
-            </p>
-
-            {actionMessage && (
-              <p className="mt-2 rounded-xl border border-zinc-400 bg-zinc-100 px-3 py-2 text-sm text-zinc-800">
-                {actionMessage}
-              </p>
-            )}
+            {actionMessage && <p className={styles.message}>{actionMessage}</p>}
 
             {parsed.invalidTokens.length > 0 && (
-              <p className="mt-2 rounded-xl border border-zinc-400 bg-zinc-100 px-3 py-2 text-sm text-zinc-800">
+              <p className={styles.invalid}>
                 Se ignoraron estos valores por no ser numericos: {" "}
                 {parsed.invalidTokens.slice(0, 12).join(", ")}
                 {parsed.invalidTokens.length > 12 ? "..." : ""}
@@ -397,30 +395,21 @@ export default function Home() {
             )}
           </article>
 
-          <article className="rounded-2xl border border-zinc-300 bg-white p-4 sm:p-5">
-            <h2 className="mb-3 text-lg font-semibold text-zinc-900">Resultados</h2>
+          <article className={styles.panel}>
+            <h2 className={styles.panelTitle}>Resultados</h2>
 
             {stats ? (
-              <>
-                <dl className="grid gap-2 sm:grid-cols-2">
-                  {metricRows.map(([label, value]) => (
-                    <div
-                      key={label}
-                      className="rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-2"
-                    >
-                      <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-                        {label}
-                      </dt>
-                      <dd className="mt-1 break-words text-base font-semibold text-zinc-900">
-                        {value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
+              <dl className={styles.resultsGrid}>
+                {metricRows.map(([label, value]) => (
+                  <div key={label} className={styles.resultTile}>
+                    <dt className={styles.resultLabel}>{label}</dt>
+                    <dd className={styles.resultValue}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
             ) : (
-              <p className="rounded-xl border border-zinc-300 bg-zinc-50 px-3 py-3 text-sm text-zinc-700">
-                Ingresa al menos un numero valido para ver los resultados.
+              <p className={styles.emptyState}>
+                Ingresa al menos un numero valido y presiona Calcular.
               </p>
             )}
           </article>

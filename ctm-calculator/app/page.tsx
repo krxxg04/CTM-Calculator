@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 
 type ParseResult = {
   values: number[];
@@ -182,12 +183,89 @@ function formatNumber(value: number | null): string {
 
 export default function Home() {
   const [input, setInput] = useState<string>(SAMPLE_DATA);
+  const [actionMessage, setActionMessage] = useState<string>("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const parsed = useMemo(() => parseValues(input), [input]);
   const stats = useMemo(
     () => (parsed.values.length > 0 ? calculateStatistics(parsed.values) : null),
     [parsed.values],
   );
+
+  useEffect(() => {
+    if (!actionMessage) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setActionMessage("");
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [actionMessage]);
+
+  function handleLoadExample(): void {
+    setInput(SAMPLE_DATA);
+    setActionMessage("Ejemplo cargado correctamente.");
+    textareaRef.current?.focus();
+  }
+
+  function handleClear(): void {
+    setInput("");
+    setActionMessage("Datos limpiados.");
+    textareaRef.current?.focus();
+  }
+
+  function handleExportExcel(): void {
+    if (!stats) {
+      setActionMessage("No hay datos validos para exportar.");
+      return;
+    }
+
+    const resultsSheetData: Array<[string, number | string]> = [
+      ["Indicador", "Valor"],
+      ["Media", stats.mean],
+      ["Error tipico", stats.standardError ?? "N/A"],
+      ["Mediana", stats.median],
+      ["Moda", stats.mode.length > 0 ? stats.mode.join(", ") : "Sin moda"],
+      ["Desviacion estandar (muestral)", stats.sampleStdDev ?? "N/A"],
+      ["Varianza de la muestra", stats.sampleVariance ?? "N/A"],
+      ["Curtosis (exceso)", stats.kurtosis ?? "N/A"],
+      ["Coeficiente de asimetria", stats.skewness ?? "N/A"],
+      ["Rango", stats.range],
+      ["Minimo", stats.min],
+      ["Maximo", stats.max],
+      ["Suma", stats.sum],
+      ["Cuenta", stats.count],
+    ];
+
+    const valuesSheetData: Array<[number, number]> = parsed.values.map((value, index) => [
+      index + 1,
+      value,
+    ]);
+
+    const workbook = XLSX.utils.book_new();
+    const resultsSheet = XLSX.utils.aoa_to_sheet(resultsSheetData);
+    const valuesSheet = XLSX.utils.aoa_to_sheet([
+      ["Indice", "Valor"],
+      ...valuesSheetData,
+    ]);
+
+    XLSX.utils.book_append_sheet(workbook, resultsSheet, "Resultados");
+    XLSX.utils.book_append_sheet(workbook, valuesSheet, "Datos");
+
+    if (parsed.invalidTokens.length > 0) {
+      const invalidSheet = XLSX.utils.aoa_to_sheet([
+        ["Valores ignorados"],
+        ...parsed.invalidTokens.map((token) => [token]),
+      ]);
+      XLSX.utils.book_append_sheet(workbook, invalidSheet, "Ignorados");
+    }
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
+    XLSX.writeFile(workbook, `estadistica-descriptiva-${timestamp}.xlsx`);
+    setActionMessage("Archivo Excel exportado.");
+  }
 
   const modeLabel =
     stats?.mode.length === 0
@@ -240,22 +318,31 @@ export default function Home() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setInput(SAMPLE_DATA)}
+                  onClick={handleLoadExample}
                   className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
                 >
                   Cargar ejemplo
                 </button>
                 <button
                   type="button"
-                  onClick={() => setInput("")}
+                  onClick={handleClear}
                   className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
                 >
                   Limpiar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  disabled={!stats}
+                  className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-400 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  Exportar Excel
                 </button>
               </div>
             </div>
 
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               spellCheck={false}
@@ -271,6 +358,12 @@ export default function Home() {
                 Valores invalidos: <strong>{parsed.invalidTokens.length}</strong>
               </p>
             </div>
+
+            {actionMessage && (
+              <p className="mt-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                {actionMessage}
+              </p>
+            )}
 
             {parsed.invalidTokens.length > 0 && (
               <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">

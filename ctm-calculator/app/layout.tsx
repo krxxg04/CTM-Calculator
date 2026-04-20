@@ -20,6 +20,11 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Osito Calculator",
   description: "Calculadora estadistica para analizar datos numericos",
+  icons: {
+    icon: [{ url: "/image.png", type: "image/png" }],
+    shortcut: [{ url: "/image.png", type: "image/png" }],
+    apple: [{ url: "/image.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

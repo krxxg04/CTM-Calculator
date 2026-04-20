@@ -302,12 +302,12 @@ export default function Home() {
       <main className="relative mx-auto w-full max-w-6xl rounded-3xl border border-zinc-900/20 bg-white/95 p-4 shadow-[0_25px_70px_rgba(0,0,0,0.2)] backdrop-blur-md sm:p-6 lg:p-8">
         <header className="mb-6">
           <div className="flex items-center gap-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-zinc-900 bg-black shadow-sm">
+            <div className="relative h-16 w-16 overflow-hidden rounded-2xl border border-zinc-400 bg-white shadow-sm">
               <Image
                 src="/image.png"
                 alt="Logo de Osito Calculator"
                 fill
-                className="object-contain p-1"
+                className="object-contain p-1 invert contrast-125"
                 priority
               />
             </div>

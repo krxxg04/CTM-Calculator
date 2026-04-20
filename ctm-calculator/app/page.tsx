@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
 
 type ParseResult = {
   values: number[];
@@ -33,6 +32,9 @@ const SAMPLE_DATA = `12, 18, 21, 21, 25
 35
 35
 40`;
+
+const STORAGE_INPUT_KEY = "ctm-calculator.input";
+const STORAGE_DECIMAL_MODE_KEY = "ctm-calculator.decimal-mode";
 
 const numberFormatter = new Intl.NumberFormat("es-ES", {
   maximumFractionDigits: 6,
@@ -219,9 +221,10 @@ function formatNumber(value: number | null): string {
 }
 
 export default function Home() {
-  const [input, setInput] = useState<string>(SAMPLE_DATA);
+  const [input, setInput] = useState<string>("");
   const [decimalMode, setDecimalMode] = useState<DecimalMode>("auto");
   const [actionMessage, setActionMessage] = useState<string>("");
+  const [isStateRestored, setIsStateRestored] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const resolvedMode = useMemo(
@@ -251,6 +254,36 @@ export default function Home() {
     return () => window.clearTimeout(timeoutId);
   }, [actionMessage]);
 
+  useEffect(() => {
+    try {
+      const savedInput = window.localStorage.getItem(STORAGE_INPUT_KEY);
+      const savedDecimalMode = window.localStorage.getItem(STORAGE_DECIMAL_MODE_KEY);
+
+      if (savedInput !== null) {
+        setInput(savedInput);
+      }
+
+      if (
+        savedDecimalMode === "auto" ||
+        savedDecimalMode === "dot" ||
+        savedDecimalMode === "comma"
+      ) {
+        setDecimalMode(savedDecimalMode);
+      }
+    } finally {
+      setIsStateRestored(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isStateRestored) {
+      return;
+    }
+
+    window.localStorage.setItem(STORAGE_INPUT_KEY, input);
+    window.localStorage.setItem(STORAGE_DECIMAL_MODE_KEY, decimalMode);
+  }, [input, decimalMode, isStateRestored]);
+
   function handleLoadExample(): void {
     setInput(SAMPLE_DATA);
     setDecimalMode("auto");
@@ -264,55 +297,60 @@ export default function Home() {
     textareaRef.current?.focus();
   }
 
-  function handleExportExcel(): void {
+  async function handleExportExcel(): Promise<void> {
     if (!stats) {
       setActionMessage("No hay datos validos para exportar.");
       return;
     }
 
-    const resultsSheetData: Array<[string, number | string]> = [
-      ["Indicador", "Valor"],
-      ["Media", stats.mean],
-      ["Error tipico", stats.standardError ?? "N/A"],
-      ["Mediana", stats.median],
-      ["Moda", stats.mode.length > 0 ? stats.mode.join(", ") : "Sin moda"],
-      ["Desviacion estandar (muestral)", stats.sampleStdDev ?? "N/A"],
-      ["Varianza de la muestra", stats.sampleVariance ?? "N/A"],
-      ["Curtosis (exceso)", stats.kurtosis ?? "N/A"],
-      ["Coeficiente de asimetria", stats.skewness ?? "N/A"],
-      ["Rango", stats.range],
-      ["Minimo", stats.min],
-      ["Maximo", stats.max],
-      ["Suma", stats.sum],
-      ["Cuenta", stats.count],
-    ];
+    try {
+      const XLSX = await import("xlsx");
 
-    const valuesSheetData: Array<[number, number]> = parsed.values.map((value, index) => [
-      index + 1,
-      value,
-    ]);
+      const resultsSheetData: Array<[string, number | string]> = [
+        ["Indicador", "Valor"],
+        ["Media", stats.mean],
+        ["Error tipico", stats.standardError ?? "N/A"],
+        ["Mediana", stats.median],
+        ["Moda", stats.mode.length > 0 ? stats.mode.join(", ") : "Sin moda"],
+        ["Desviacion estandar (muestral)", stats.sampleStdDev ?? "N/A"],
+        ["Varianza de la muestra", stats.sampleVariance ?? "N/A"],
+        ["Curtosis (exceso)", stats.kurtosis ?? "N/A"],
+        ["Coeficiente de asimetria", stats.skewness ?? "N/A"],
+        ["Rango", stats.range],
+        ["Minimo", stats.min],
+        ["Maximo", stats.max],
+        ["Suma", stats.sum],
+        ["Cuenta", stats.count],
+      ];
 
-    const workbook = XLSX.utils.book_new();
-    const resultsSheet = XLSX.utils.aoa_to_sheet(resultsSheetData);
-    const valuesSheet = XLSX.utils.aoa_to_sheet([
-      ["Indice", "Valor"],
-      ...valuesSheetData,
-    ]);
+      const valuesSheetData: Array<[number, number]> = parsed.values.map(
+        (value, index) => [index + 1, value],
+      );
 
-    XLSX.utils.book_append_sheet(workbook, resultsSheet, "Resultados");
-    XLSX.utils.book_append_sheet(workbook, valuesSheet, "Datos");
-
-    if (parsed.invalidTokens.length > 0) {
-      const invalidSheet = XLSX.utils.aoa_to_sheet([
-        ["Valores ignorados"],
-        ...parsed.invalidTokens.map((token) => [token]),
+      const workbook = XLSX.utils.book_new();
+      const resultsSheet = XLSX.utils.aoa_to_sheet(resultsSheetData);
+      const valuesSheet = XLSX.utils.aoa_to_sheet([
+        ["Indice", "Valor"],
+        ...valuesSheetData,
       ]);
-      XLSX.utils.book_append_sheet(workbook, invalidSheet, "Ignorados");
-    }
 
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-    XLSX.writeFile(workbook, `estadistica-descriptiva-${timestamp}.xlsx`);
-    setActionMessage("Archivo Excel exportado.");
+      XLSX.utils.book_append_sheet(workbook, resultsSheet, "Resultados");
+      XLSX.utils.book_append_sheet(workbook, valuesSheet, "Datos");
+
+      if (parsed.invalidTokens.length > 0) {
+        const invalidSheet = XLSX.utils.aoa_to_sheet([
+          ["Valores ignorados"],
+          ...parsed.invalidTokens.map((token) => [token]),
+        ]);
+        XLSX.utils.book_append_sheet(workbook, invalidSheet, "Ignorados");
+      }
+
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
+      XLSX.writeFile(workbook, `estadistica-descriptiva-${timestamp}.xlsx`);
+      setActionMessage("Archivo Excel exportado.");
+    } catch {
+      setActionMessage("No se pudo exportar Excel. Intenta nuevamente.");
+    }
   }
 
   const modeLabel =

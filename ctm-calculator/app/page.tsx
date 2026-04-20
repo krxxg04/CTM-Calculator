@@ -7,9 +7,6 @@ type ParseResult = {
   invalidTokens: string[];
 };
 
-type DecimalMode = "auto" | "dot" | "comma";
-type ResolvedDecimalMode = "dot" | "comma";
-
 type StatisticsResult = {
   mean: number;
   standardError: number | null;
@@ -34,89 +31,27 @@ const SAMPLE_DATA = `12, 18, 21, 21, 25
 40`;
 
 const STORAGE_INPUT_KEY = "ctm-calculator.input";
-const STORAGE_DECIMAL_MODE_KEY = "ctm-calculator.decimal-mode";
 
 const numberFormatter = new Intl.NumberFormat("es-ES", {
   maximumFractionDigits: 6,
 });
 
-function resolveDecimalMode(input: string, mode: DecimalMode): ResolvedDecimalMode {
-  if (mode !== "auto") {
-    return mode;
-  }
-
+function tokenizeInput(input: string): string[] {
   const normalizedInput = input.replaceAll("\r", "");
-  const commaCount = (normalizedInput.match(/,/g) ?? []).length;
-  const decimalCommaMatches =
-    normalizedInput.match(/[-+]?\d+,\d+(?:e[-+]?\d+)?/gi) ?? [];
-
-  const hasRowSeparators = /[\n;\t]/.test(normalizedInput);
-  if (hasRowSeparators && decimalCommaMatches.length > 0) {
-    return "comma";
-  }
-
-  if (commaCount > 0 && commaCount === decimalCommaMatches.length) {
-    return "comma";
-  }
-
-  return "dot";
-}
-
-function tokenizeInput(input: string, resolvedMode: ResolvedDecimalMode): string[] {
-  const normalizedInput = input.replaceAll("\r", "");
-  const separatorPattern =
-    resolvedMode === "dot" ? /[,\n;\t\s]+/ : /[\n;\t\s]+/;
-
-  const baseTokens = normalizedInput
-    .split(separatorPattern)
+  return normalizedInput
+    .split(/[,\n;\t\s]+/)
     .map((token) => token.trim())
     .filter(Boolean);
-
-  if (resolvedMode !== "comma") {
-    return baseTokens;
-  }
-
-  const expandedTokens: string[] = [];
-  for (const token of baseTokens) {
-    const commaCount = (token.match(/,/g) ?? []).length;
-
-    // Si aparece un token con muchas comas, lo tratamos como lista separada por comas.
-    if (commaCount > 1 && !token.includes(".")) {
-      expandedTokens.push(
-        ...token.split(",").map((value) => value.trim()).filter(Boolean),
-      );
-      continue;
-    }
-
-    expandedTokens.push(token);
-  }
-
-  return expandedTokens;
 }
 
-function normalizeToken(token: string, resolvedMode: ResolvedDecimalMode): string {
-  if (resolvedMode === "dot") {
-    return token;
-  }
-
-  if (token.includes(",") && token.includes(".")) {
-    // Soporta formatos como 1.234,56.
-    return token.replaceAll(".", "").replace(",", ".");
-  }
-
-  return token.replace(",", ".");
-}
-
-function parseValues(input: string, resolvedMode: ResolvedDecimalMode): ParseResult {
+function parseValues(input: string): ParseResult {
   const numericPattern = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i;
   const values: number[] = [];
   const invalidTokens: string[] = [];
 
-  for (const rawToken of tokenizeInput(input, resolvedMode)) {
-    const token = normalizeToken(rawToken, resolvedMode);
-
+  for (const token of tokenizeInput(input)) {
     if (!numericPattern.test(token)) {
-      invalidTokens.push(rawToken);
+      invalidTokens.push(token);
       continue;
     }
 
@@ -124,7 +59,7 @@ function parseValues(input: string, resolvedMode: ResolvedDecimalMode): ParseRes
     if (Number.isFinite(value)) {
       values.push(value);
     } else {
-      invalidTokens.push(rawToken);
+      invalidTokens.push(token);
     }
   }
 
@@ -222,20 +157,11 @@ function formatNumber(value: number | null): string {
 
 export default function Home() {
   const [input, setInput] = useState<string>("");
-  const [decimalMode, setDecimalMode] = useState<DecimalMode>("auto");
   const [actionMessage, setActionMessage] = useState<string>("");
   const [isStateRestored, setIsStateRestored] = useState<boolean>(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const resolvedMode = useMemo(
-    () => resolveDecimalMode(input, decimalMode),
-    [input, decimalMode],
-  );
-
-  const parsed = useMemo(
-    () => parseValues(input, resolvedMode),
-    [input, resolvedMode],
-  );
+  const parsed = useMemo(() => parseValues(input), [input]);
 
   const stats = useMemo(
     () => (parsed.values.length > 0 ? calculateStatistics(parsed.values) : null),
@@ -257,18 +183,9 @@ export default function Home() {
   useEffect(() => {
     try {
       const savedInput = window.localStorage.getItem(STORAGE_INPUT_KEY);
-      const savedDecimalMode = window.localStorage.getItem(STORAGE_DECIMAL_MODE_KEY);
 
       if (savedInput !== null) {
         setInput(savedInput);
-      }
-
-      if (
-        savedDecimalMode === "auto" ||
-        savedDecimalMode === "dot" ||
-        savedDecimalMode === "comma"
-      ) {
-        setDecimalMode(savedDecimalMode);
       }
     } finally {
       setIsStateRestored(true);
@@ -281,12 +198,10 @@ export default function Home() {
     }
 
     window.localStorage.setItem(STORAGE_INPUT_KEY, input);
-    window.localStorage.setItem(STORAGE_DECIMAL_MODE_KEY, decimalMode);
-  }, [input, decimalMode, isStateRestored]);
+  }, [input, isStateRestored]);
 
   function handleLoadExample(): void {
     setInput(SAMPLE_DATA);
-    setDecimalMode("auto");
     setActionMessage("Ejemplo cargado correctamente.");
     textareaRef.current?.focus();
   }
@@ -393,7 +308,8 @@ export default function Home() {
           </h1>
           <p className="max-w-3xl text-sm text-slate-600 sm:text-base">
             Pega tus numeros separados por comas, saltos de linea, tabulaciones
-            o punto y coma. El calculo se actualiza automaticamente.
+            o punto y coma. Usa punto para decimales (ej. 12.5). El calculo se
+            actualiza automaticamente.
           </p>
         </header>
 
@@ -403,19 +319,6 @@ export default function Home() {
               <h2 className="text-lg font-semibold text-slate-900">Entrada de datos</h2>
 
               <div className="flex flex-wrap items-center gap-2">
-                <label className="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
-                  Decimales
-                  <select
-                    value={decimalMode}
-                    onChange={(event) => setDecimalMode(event.target.value as DecimalMode)}
-                    className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 outline-none"
-                  >
-                    <option value="auto">Auto</option>
-                    <option value="dot">Con punto (12.5)</option>
-                    <option value="comma">Con coma (12,5)</option>
-                  </select>
-                </label>
-
                 <button
                   type="button"
                   onClick={handleLoadExample}
@@ -460,7 +363,7 @@ export default function Home() {
             </div>
 
             <p className="mt-2 text-xs text-slate-500">
-              Modo detectado: <strong>{resolvedMode === "dot" ? "punto" : "coma"}</strong>.
+              Regla: coma para separar numeros y punto para decimales.
             </p>
 
             {actionMessage && (
